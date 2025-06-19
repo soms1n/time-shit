@@ -1,0 +1,45 @@
+body {
+    font-family: 'Roboto', serif;
+    font-size: 16px;
+    background-color: #f6f6f6;
+    margin: 10px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 4px;
+    text-align: center;
+}
+
+.weekend {
+    background-color: #fff7dd;
+}
+
+th.weekend {
+    background-color: #fff7dd;
+}
+
+.over {
+    background-color: #ccffcc;
+}
+
+.over-orange {
+    background-color: #ffd699;
+}
+
+.selected {
+    outline: 2px solid red;
+}
+
+.today {
+    background-color: #cceeff;
+}
+
+.test {
+    background-color: #cceeff;
+}
