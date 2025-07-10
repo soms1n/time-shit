@@ -48,18 +48,61 @@ function loadConfigAndData() {
     });
 }
 
+// === Progress Bar Functions ===
+function showProgress(text = 'Загрузка...') {
+    const progressContainer = document.getElementById('progressContainer');
+    const progressText = progressContainer.querySelector('.progress-text');
+    const progressFill = progressContainer.querySelector('.progress-fill');
+
+    progressContainer.style.display = 'block';
+    progressText.textContent = text;
+    progressFill.style.width = '0%';
+
+    document.getElementById('result').innerHTML = '';
+    document.getElementById('total').innerHTML = '';
+}
+
+function updateProgress(current, total, text = null) {
+    const progressContainer = document.getElementById('progressContainer');
+    const progressText = progressContainer.querySelector('.progress-text');
+    const progressFill = progressContainer.querySelector('.progress-fill');
+
+    const percentage = Math.round((current / total) * 100);
+    progressFill.style.width = `${percentage}%`;
+
+    if (text) {
+        progressText.textContent = text;
+    } else {
+        progressText.textContent = `Загрузка worklogs: ${current} из ${total} задач (${percentage}%)`;
+    }
+}
+
+function hideProgress() {
+    const progressContainer = document.getElementById('progressContainer');
+    progressContainer.style.display = 'none';
+}
+
 // === Data Loading ===
 async function loadWorklogs() {
-    showLoading();
+    showProgress('Поиск задач...');
 
     const [year, month] = monthSelector.value.split('-').map(Number);
     const issues = await fetchIssues(year, month);
 
     if (!issues) {
+        hideProgress();
         return;
     }
 
+    if (issues.length === 0) {
+        hideProgress();
+        showError('Задачи не найдены для указанного периода.');
+        return;
+    }
+
+    updateProgress(0, issues.length, `Найдено задач: ${issues.length}`);
     localData = await fetchWorklogsForIssues(issues, year, month);
+    hideProgress();
     renderTable();
 }
 
@@ -82,9 +125,12 @@ async function fetchIssues(year, month) {
 
 async function fetchWorklogsForIssues(issues, year, month) {
     const data = {};
+    let processed = 0;
 
     for (const issueKey of issues) {
         const worklogs = await fetchWorklogs(issueKey);
+        processed++;
+        updateProgress(processed, issues.length);
 
         if (!worklogs) {
             continue;
@@ -123,7 +169,7 @@ async function fetchWorklogs(issueKey) {
         const response = await fetch(url, {credentials: 'include'});
         return (await response.json()).worklogs;
     } catch (exception) {
-        showError('Ошибка загрузки: ' + exception);
+        console.error(`Ошибка загрузки worklogs для ${issueKey}:`, exception);
         return null;
     }
 }
@@ -269,9 +315,13 @@ async function openPopup(task, days) {
     const [year, month] = monthSelector.value.split('-').map(Number);
     const sortedDays = Array.from(days).sort((previous, next) => previous - next);
 
+    showProgress(`Обновление worklogs для ${task}...`);
+    let processed = 0;
+
     for (const day of sortedDays) {
         const worklogs = localData[task]?.[day] || [];
 
+        // Удаление существующих worklogs
         for (const worklog of worklogs) {
             await fetch(`${window.jiraData.jiraUrl}/rest/api/2/issue/${task}/worklog/${worklog.id}`, {
                 method: 'DELETE',
@@ -279,6 +329,7 @@ async function openPopup(task, days) {
             });
         }
 
+        // Создание нового worklog
         const date = new Date(year, month - 1, day, 9, 0, 0);
 
         await fetch(`${window.jiraData.jiraUrl}/rest/api/2/issue/${task}/worklog`, {
@@ -290,8 +341,12 @@ async function openPopup(task, days) {
 
         localData[task] ??= {};
         localData[task][day] = [{id: "new", started: formatJiraDate(date), seconds: hours * 3600}];
+
+        processed++;
+        updateProgress(processed, sortedDays.length, `Обновлено дней: ${processed} из ${sortedDays.length}`);
     }
 
+    hideProgress();
     renderTable();
 }
 
@@ -347,10 +402,6 @@ function getSummaryClass(date, day, today, total, norm) {
     }
 
     return `${cls} ${today.getDate() === day ? 'today' : ''}`;
-}
-
-function showLoading() {
-    document.getElementById('result').innerText = 'Загрузка...';
 }
 
 function showError(message) {
