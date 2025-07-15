@@ -90,3 +90,15 @@ th.weekend {
     color: #666;
     font-size: 14px;
 }
+
+/* Стили для ссылок на задачи */
+table td a {
+    color: #0052CC;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+table td a:hover {
+    color: #0065FF;
+    text-decoration: underline;
+}

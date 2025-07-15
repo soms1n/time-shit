@@ -209,7 +209,8 @@ function renderTable() {
     html += '</tr></thead><tbody>';
 
     issues.forEach(issue => {
-        html += `<tr><td>${issue}</td>`;
+        const issueUrl = `${window.jiraData.jiraUrl}/browse/${issue}`;
+        html += `<tr><td><a href="${issueUrl}" target="_blank">${issue}</a></td>`;
         for (let day = 1; day <= daysInMonth; day++) {
             const logs = localData[issue]?.[day] || [];
             const totalHours = calculateHours(logs);
