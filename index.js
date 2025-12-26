@@ -39,6 +39,26 @@ function initializeUI() {
         .getElementById('export')
         .addEventListener('click', exportToCSV);
 
+    document
+        .getElementById('autoFill')
+        .addEventListener('click', toggleAutoFillPanel);
+
+    document
+        .getElementById('cancelAutoFill')
+        .addEventListener('click', hideAutoFillPanel);
+
+    document
+        .getElementById('applyAutoFill')
+        .addEventListener('click', applyAutoFill);
+
+    document
+        .getElementById('randomTasks')
+        .addEventListener('change', handleTaskSelectionChange);
+
+    document
+        .getElementById('selectedTasks')
+        .addEventListener('change', handleTaskSelectionChange);
+
     monthSelector.addEventListener('change', loadWorklogs);
 }
 
@@ -323,13 +343,26 @@ function renderTable() {
 
     const totalsPerDay = {};
 
+    // Вычисляем итоги по дням, суммируя секунды для точности
     issues.forEach(issue => {
         for (let day = 1; day <= daysInMonth; day++) {
             const logs = localData[issue]?.[day] || [];
-            const totalHours = calculateHours(logs);
-            totalsPerDay[day] = (totalsPerDay[day] || 0) + totalHours;
+            const totalSeconds = logs.reduce((sum, worklog) => sum + worklog.seconds, 0);
+            if (!totalsPerDay[day]) {
+                totalsPerDay[day] = { seconds: 0 };
+            }
+            totalsPerDay[day].seconds += totalSeconds;
         }
     });
+    
+    // Конвертируем секунды в часы с округлением только финального результата
+    for (let day = 1; day <= daysInMonth; day++) {
+        if (totalsPerDay[day]) {
+            totalsPerDay[day] = Math.round((totalsPerDay[day].seconds / 3600) * 100) / 100;
+        } else {
+            totalsPerDay[day] = 0;
+        }
+    }
 
     let html = '<table><thead><tr><th rowspan="2">Задача</th>';
 
@@ -703,4 +736,386 @@ function exportToCSV() {
     link.href = url;
     link.download = "worklog.csv";
     link.click();
+}
+
+// === Auto Fill Functions ===
+function toggleAutoFillPanel() {
+    const panel = document.getElementById('autoFillPanel');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+function hideAutoFillPanel() {
+    document.getElementById('autoFillPanel').style.display = 'none';
+}
+
+function handleTaskSelectionChange(event) {
+    const randomTasksCheckbox = document.getElementById('randomTasks');
+    const selectedTasksCheckbox = document.getElementById('selectedTasks');
+    const selectedTasksInputGroup = document.getElementById('selectedTasksInputGroup');
+    const selectedTasksInput = document.getElementById('selectedTasksInput');
+    
+    // Если выбран чекбокс, который был изменён, снимаем другой
+    if (event.target.id === 'randomTasks' && randomTasksCheckbox.checked) {
+        selectedTasksCheckbox.checked = false;
+        selectedTasksInputGroup.style.display = 'none';
+        selectedTasksInput.disabled = true;
+    } else if (event.target.id === 'selectedTasks' && selectedTasksCheckbox.checked) {
+        randomTasksCheckbox.checked = false;
+        selectedTasksInputGroup.style.display = 'block';
+        selectedTasksInput.disabled = false;
+    } else if (!selectedTasksCheckbox.checked) {
+        selectedTasksInputGroup.style.display = 'none';
+        selectedTasksInput.disabled = true;
+    }
+}
+
+async function applyAutoFill() {
+    const omniHoursText = document.getElementById('omniHours').value.trim();
+    const randomTasksChecked = document.getElementById('randomTasks').checked;
+    const selectedTasksChecked = document.getElementById('selectedTasks').checked;
+    const selectedTasksInput = document.getElementById('selectedTasksInput').value.trim();
+    
+    // Парсим значение OMNI-1
+    const omniHours = parseHoursFromText(omniHoursText);
+    if (isNaN(omniHours) || omniHours < 0) {
+        alert('Некорректное значение для OMNI-1. Используйте формат "1 час" или "1.5 час"');
+        return;
+    }
+    
+    // Получаем норму часов из настроек
+    const norm = parseFloat(window.jiraData.normHours) || 8;
+    
+    // Получаем текущий месяц
+    const [year, month] = monthSelector.value.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    
+    // Определяем дни, в которых не хватает часов
+    const daysWithInsufficientHours = findDaysWithInsufficientHours(year, month, daysInMonth, norm);
+    
+    if (daysWithInsufficientHours.length === 0) {
+        alert('Все дни уже заполнены до нормы.');
+        hideAutoFillPanel();
+        return;
+    }
+    
+    // Определяем список задач для распределения времени
+    let tasksForDistribution = [];
+    
+    if (selectedTasksChecked && selectedTasksInput) {
+        // Если выбрано "Ввести задачи вручную"
+        tasksForDistribution = selectedTasksInput.split(',').map(task => task.trim()).filter(task => task.length > 0);
+        
+        // Исключаем OMNI-1 из списка задач для распределения
+        tasksForDistribution = tasksForDistribution.filter(task => task !== 'OMNI-1');
+        
+        if (tasksForDistribution.length === 0) {
+            alert('Не указаны задачи для распределения времени.');
+            return;
+        }
+    } else if (randomTasksChecked) {
+        // Если выбрано "Распределить время по всем задачам в этом месяце"
+        // Исключаем OMNI-1 из списка задач для распределения
+        tasksForDistribution = Object.keys(localData).filter(task => task !== 'OMNI-1');
+        
+        if (tasksForDistribution.length === 0) {
+            alert('Не найдено задач в текущем месяце.');
+            return;
+        }
+    }
+    
+    // Подтверждение перед выполнением
+    const daysCount = daysWithInsufficientHours.length;
+    const confirmMessage = `Будет обработано ${daysCount} ${daysCount === 1 ? 'день' : daysCount < 5 ? 'дня' : 'дней'}.\n\n` +
+        `OMNI-1: ${omniHours} ${omniHours === 1 ? 'час' : 'часа'}\n` +
+        `Задач для распределения: ${tasksForDistribution.length}\n\n` +
+        `Продолжить?`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    showProgress('Автоматическое списание времени...');
+    
+    // Фильтруем дни, исключая выходные
+    const workingDays = daysWithInsufficientHours.filter(day => {
+        const date = new Date(year, month - 1, day);
+        const dayOfWeek = date.getDay();
+        return dayOfWeek !== 0 && dayOfWeek !== 6;
+    });
+    
+    // Функция для обработки одного дня
+    const processDay = async (day) => {
+        try {
+            // Вычисляем текущее количество часов в дне (до добавления OMNI-1)
+            const currentHoursBeforeOmni = calculateTotalHoursForDay(day);
+            const missingHoursBeforeOmni = norm - currentHoursBeforeOmni;
+            
+            if (missingHoursBeforeOmni <= 0) {
+                return {day, success: true};
+            }
+            
+            // 1. Добавляем время на OMNI-1
+            if (omniHours > 0) {
+                const currentOmniHours = calculateHoursForTaskAndDay('OMNI-1', day);
+                // Устанавливаем время на OMNI-1 только если:
+                // - времени нет (0) - устанавливаем из настройки
+                // - текущее время меньше настройки - устанавливаем из настройки
+                // Если уже установлено больше или равно настройке (вручную), не трогаем
+                if (currentOmniHours === 0 || currentOmniHours < omniHours) {
+                    await addWorklogForDay('OMNI-1', day, year, month, omniHours);
+                }
+            }
+            
+            // 2. Распределяем оставшееся время между задачами
+            if (tasksForDistribution.length > 0) {
+                // Вычисляем фактическое время на OMNI-1 после возможного добавления в секундах для точности
+                const actualOmniSeconds = calculateSecondsForTaskAndDay('OMNI-1', day);
+                
+                // Вычисляем время для распределения между задачами в секундах
+                const secondsForDistribution = (norm * 3600) - actualOmniSeconds;
+                
+                if (secondsForDistribution > 0) {
+                    // Вычисляем текущее время на всех задачах для распределения в секундах (после добавления OMNI-1)
+                    const taskCurrentSeconds = {};
+                    let currentSecondsOnTasks = 0;
+                    for (const task of tasksForDistribution) {
+                        const seconds = calculateSecondsForTaskAndDay(task, day);
+                        taskCurrentSeconds[task] = seconds;
+                        currentSecondsOnTasks += seconds;
+                    }
+                    
+                    // Вычисляем текущее общее время в дне в секундах (после добавления OMNI-1)
+                    const currentTotalSecondsAfterOmni = actualOmniSeconds + currentSecondsOnTasks;
+                    const targetTotalSeconds = norm * 3600;
+                    const missingSecondsAfterOmni = targetTotalSeconds - currentTotalSecondsAfterOmni;
+                    
+                    if (missingSecondsAfterOmni > 0) {
+                        // Вычисляем целевое время для распределения в секундах для точности
+                        const secondsPerTask = Math.floor(secondsForDistribution / tasksForDistribution.length);
+                        const remainderSeconds = secondsForDistribution % tasksForDistribution.length;
+                        
+                        // Вычисляем, сколько времени нужно добавить на задачи для достижения целевого значения
+                        const secondsNeededForTarget = secondsForDistribution - currentSecondsOnTasks;
+                        
+                        // Если недостающее время меньше чем нужно для достижения целевого значения,
+                        // то распределяем только недостающее время пропорционально
+                        // Иначе устанавливаем целевое значение на всех задачах
+                        const secondsToAddTotal = Math.min(missingSecondsAfterOmni, Math.max(0, secondsNeededForTarget));
+                        
+                        if (secondsToAddTotal > 0) {
+                            // Распределяем недостающее время в секундах между задачами
+                            const secondsToAddPerTask = Math.floor(secondsToAddTotal / tasksForDistribution.length);
+                            const secondsRemainder = secondsToAddTotal % tasksForDistribution.length;
+                            
+                            // Обрабатываем задачи параллельно
+                            const taskPromises = tasksForDistribution.map(async (task, index) => {
+                                const currentTaskSeconds = taskCurrentSeconds[task];
+                                
+                                // Вычисляем целевое время для задачи в секундах
+                                let targetSeconds;
+                                if (secondsNeededForTarget <= missingSecondsAfterOmni) {
+                                    // Если недостающего времени достаточно для достижения целевого значения,
+                                    // устанавливаем целевое значение (с учетом остатка для последних задач)
+                                    targetSeconds = secondsPerTask;
+                                    // Распределяем остаток на последние задачи
+                                    if (index >= tasksForDistribution.length - remainderSeconds) {
+                                        targetSeconds += 1;
+                                    }
+                                } else {
+                                    // Если недостающего времени меньше, добавляем пропорциональную долю
+                                    targetSeconds = currentTaskSeconds + secondsToAddPerTask;
+                                    // Распределяем остаток на последние задачи
+                                    if (index >= tasksForDistribution.length - secondsRemainder) {
+                                        targetSeconds += 1;
+                                    }
+                                }
+                                
+                                // Устанавливаем целевое время только если оно больше текущего
+                                if (targetSeconds > currentTaskSeconds) {
+                                    // Округляем секунды до целого числа для точности
+                                    const roundedSeconds = Math.round(targetSeconds);
+                                    const targetHours = roundedSeconds / 3600;
+                                    await addWorklogForDay(task, day, year, month, targetHours);
+                                }
+                            });
+                            
+                            await Promise.all(taskPromises);
+                        }
+                    }
+                }
+            }
+            
+            return {day, success: true};
+        } catch (error) {
+            console.error(`Ошибка при обработке дня ${day}:`, error);
+            return {day, success: false, error: error.message};
+        }
+    };
+    
+    // Обрабатываем все дни параллельно
+    let completed = 0;
+    const dayPromises = workingDays.map(async (day) => {
+        const result = await processDay(day);
+        completed++;
+        updateProgress(completed, workingDays.length, `Обработано дней: ${completed} из ${workingDays.length}`);
+        return result;
+    });
+    
+    const results = await Promise.allSettled(dayPromises);
+    
+    // Собираем ошибки и считаем успешно обработанные дни
+    const errors = [];
+    let processed = 0;
+    results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+            if (result.value.success) {
+                processed++;
+            } else {
+                errors.push(`День ${result.value.day}: ${result.value.error}`);
+            }
+        } else {
+            errors.push(`День ${workingDays[index]}: ${result.reason?.message || 'Неизвестная ошибка'}`);
+        }
+    });
+    
+    hideProgress();
+    
+    if (errors.length > 0) {
+        alert(`Ошибки при автоматическом списании:\n${errors.join('\n')}`);
+    } else {
+        alert(`Автоматическое списание завершено. Обработано дней: ${processed}`);
+    }
+    
+    // Перезагружаем данные
+    await loadWorklogs();
+    hideAutoFillPanel();
+}
+
+// Вспомогательная функция для парсинга часов из текста
+function parseHoursFromText(text) {
+    // Удаляем все нецифровые символы кроме точки и запятой
+    const cleaned = text.replace(/[^\d.,]/g, '');
+    // Заменяем запятую на точку
+    const normalized = cleaned.replace(',', '.');
+    return parseFloat(normalized);
+}
+
+// Функция для определения дней с недостаточным количеством часов
+function findDaysWithInsufficientHours(year, month, daysInMonth, norm) {
+    const days = [];
+    const today = new Date();
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        const dayOfWeek = date.getDay();
+        
+        // Пропускаем выходные
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            continue;
+        }
+        
+        // Пропускаем будущие дни
+        if (date > today) {
+            continue;
+        }
+        
+        const totalHours = calculateTotalHoursForDay(day);
+        
+        if (totalHours < norm) {
+            days.push(day);
+        }
+    }
+    
+    return days;
+}
+
+// Функция для вычисления общего количества часов в дне
+function calculateTotalHoursForDay(day) {
+    let totalSeconds = 0;
+    
+    Object.keys(localData).forEach(issue => {
+        const logs = localData[issue]?.[day] || [];
+        totalSeconds += logs.reduce((sum, worklog) => sum + worklog.seconds, 0);
+    });
+    
+    // Округляем только финальный результат, чтобы избежать накопления ошибок округления
+    return Math.round((totalSeconds / 3600) * 100) / 100;
+}
+
+// Функция для вычисления часов для конкретной задачи в конкретный день
+function calculateHoursForTaskAndDay(task, day) {
+    const logs = localData[task]?.[day] || [];
+    return calculateHours(logs);
+}
+
+// Функция для вычисления точного количества секунд для конкретной задачи в конкретный день
+function calculateSecondsForTaskAndDay(task, day) {
+    const logs = localData[task]?.[day] || [];
+    return logs.reduce((sum, worklog) => sum + worklog.seconds, 0);
+}
+
+// Функция для добавления worklog для задачи в конкретный день
+async function addWorklogForDay(task, day, year, month, hours) {
+    if (hours <= 0) {
+        return;
+    }
+    
+    // Удаляем существующие worklogs для этой задачи в этот день
+    const existingLogs = localData[task]?.[day] || [];
+    
+    for (const worklog of existingLogs) {
+        try {
+            const deleteResponse = await fetch(`${window.jiraData.jiraUrl}/rest/api/2/issue/${task}/worklog/${worklog.id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            
+            if (!deleteResponse.ok) {
+                console.error(`Ошибка удаления worklog ${worklog.id}: ${deleteResponse.status} ${deleteResponse.statusText}`);
+            }
+        } catch (error) {
+            console.error(`Ошибка при удалении worklog ${worklog.id}:`, error);
+        }
+    }
+    
+    // Создаем новый worklog
+    const date = new Date(year, month - 1, day, 9, 0, 0);
+    
+    // Округляем секунды до целого числа для точности
+    const seconds = Math.round(hours * 3600);
+    
+    try {
+        const createResponse = await fetch(`${window.jiraData.jiraUrl}/rest/api/2/issue/${task}/worklog`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                started: formatJiraDate(date),
+                timeSpentSeconds: seconds
+            })
+        });
+        
+        if (!createResponse.ok) {
+            const errorText = await createResponse.text();
+            throw new Error(`HTTP ${createResponse.status}: ${errorText}`);
+        }
+        
+        const createdWorklog = await createResponse.json();
+        
+        // Обновляем localData с точным количеством секунд
+        localData[task] ??= {};
+        localData[task][day] = [{
+            id: createdWorklog.id,
+            started: formatJiraDate(date),
+            seconds: seconds,
+            comment: ""
+        }];
+    } catch (error) {
+        console.error(`Ошибка при создании worklog для ${task} в день ${day}:`, error);
+        throw error;
+    }
 }

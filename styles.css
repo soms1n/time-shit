@@ -596,3 +596,91 @@ table td a:visited {
     line-height: 1.5;
     white-space: pre-wrap;
 }
+
+/* Стили для группы кнопок */
+.button-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.button-group button {
+    margin-top: 0;
+}
+
+/* Стили для панели автоматического заполнения */
+.auto-fill-panel {
+    margin-top: 12px;
+    background: var(--win98-light);
+    border: 2px inset var(--win98-bg);
+    padding: 0;
+}
+
+.auto-fill-panel-header {
+    background: #D4D4D4;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--win98-dark);
+}
+
+.auto-fill-panel-header h4 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--win98-text);
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+}
+
+.auto-fill-panel-content {
+    padding: 12px;
+}
+
+.auto-fill-panel-content .form-group {
+    margin-bottom: 12px;
+}
+
+.auto-fill-panel-content .form-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+}
+
+.auto-fill-panel-content .form-group input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+}
+
+.auto-fill-panel-content .form-group input[type="text"] {
+    width: 100%;
+    padding: 4px;
+    border: 2px inset var(--win98-bg);
+    background: var(--win98-light);
+    color: var(--win98-text);
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+}
+
+.auto-fill-panel-content .form-group input[type="text"]:disabled {
+    background: #E0E0E0;
+    color: var(--win98-dark);
+    cursor: not-allowed;
+}
+
+.auto-fill-panel-content .form-group input[type="text"]:focus {
+    outline: 1px dotted var(--win98-text);
+}
+
+.auto-fill-panel-content .button-group {
+    margin-top: 12px;
+    margin-bottom: 0;
+}
+
+.auto-fill-panel-content .button-group button {
+    flex: 1;
+    min-width: 100px;
+}

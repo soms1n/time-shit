@@ -31,14 +31,53 @@
 
     <div id="result"></div>
     <div id="total"></div>
-    <button id="export">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Экспорт в CSV
-    </button>
+    <div class="button-group">
+        <button id="autoFill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+            </svg>
+            Автоматически
+        </button>
+        <button id="export">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Экспорт в CSV
+        </button>
+    </div>
+    <div id="autoFillPanel" class="auto-fill-panel" style="display: none;">
+        <div class="auto-fill-panel-header">
+            <h4>Настройки автоматического списания времени за месяц</h4>
+        </div>
+        <div class="auto-fill-panel-content">
+            <div class="form-group">
+                <label for="omniHours">OMNI-1:</label>
+                <input type="text" id="omniHours" value="1 час" placeholder="1 час">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="randomTasks" checked>
+                    Распределить время по всем задачам в этом месяце
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="selectedTasks">
+                    Ввести задачи вручную
+                </label>
+            </div>
+            <div class="form-group" id="selectedTasksInputGroup" style="display: none;">
+                <label for="selectedTasksInput">Названия задач (через запятую):</label>
+                <input type="text" id="selectedTasksInput" placeholder="TASK-1, TASK-2, TASK-3">
+            </div>
+            <div class="button-group">
+                <button id="applyAutoFill">Списать</button>
+                <button id="cancelAutoFill">Отмена</button>
+            </div>
+        </div>
+    </div>
 </main>
 <script src="index.js" defer></script>
 </body>
