@@ -3,11 +3,20 @@
   "name": "Time Shit",
   "version": "1.0.0",
   "description": "Редактор рабочих журналов для Jira.",
-  "permissions": ["storage", "identity", "scripting", "activeTab"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": [
+    "storage",
+    "identity",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js"
   },
-  "action": { "default_popup": "" },
+  "action": {
+    "default_popup": ""
+  },
   "options_page": "options.html"
 }
