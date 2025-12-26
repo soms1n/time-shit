@@ -344,13 +344,13 @@ async function openPopup(task, days) {
     }
 
     showProgress(`Обновление worklogs для ${task}...`);
-    let processed = 0;
 
-    for (const day of sortedDays) {
+    // Создаем массив промисов для параллельной обработки всех дней
+    const dayPromises = sortedDays.map(async (day, index) => {
         const worklogs = localData[task]?.[day] || [];
 
-        // Удаление существующих worklogs
-        for (const worklog of worklogs) {
+        // Удаление существующих worklogs (параллельно для всех worklogs одного дня)
+        const deletePromises = worklogs.map(async (worklog) => {
             try {
                 const deleteResponse = await fetch(`${window.jiraData.jiraUrl}/rest/api/2/issue/${task}/worklog/${worklog.id}`, {
                     method: 'DELETE',
@@ -359,56 +359,78 @@ async function openPopup(task, days) {
 
                 if (!deleteResponse.ok) {
                     console.error(`Ошибка удаления worklog ${worklog.id}: ${deleteResponse.status} ${deleteResponse.statusText}`);
+                    throw new Error(`HTTP ${deleteResponse.status}: ${deleteResponse.statusText}`);
                 }
-
-                // Небольшая задержка для избежания throttling
-                await new Promise(resolve => setTimeout(resolve, 100));
             } catch (error) {
                 console.error(`Ошибка при удалении worklog ${worklog.id}:`, error);
-                alert(`Ошибка при удалении worklog для дня ${day}. Проверьте консоль для деталей.`);
+                throw error;
             }
-        }
+        });
+
+        await Promise.allSettled(deletePromises);
 
         // Если указано 0 часов, только удаляем существующие worklogs, не создавая новый
         if (hours === 0) {
-            localData[task] ??= {};
-            localData[task][day] = [];
-        } else {
-            // Создание нового worklog
-            const date = new Date(year, month - 1, day, 9, 0, 0);
-
-            try {
-                const createResponse = await fetch(`${window.jiraData.jiraUrl}/rest/api/2/issue/${task}/worklog`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({started: formatJiraDate(date), timeSpentSeconds: hours * 3600})
-                });
-
-                if (!createResponse.ok) {
-                    const errorText = await createResponse.text();
-                    throw new Error(`HTTP ${createResponse.status}: ${errorText}`);
-                }
-
-                const createdWorklog = await createResponse.json();
-                localData[task] ??= {};
-                localData[task][day] = [{id: createdWorklog.id, started: formatJiraDate(date), seconds: hours * 3600}];
-
-                // Небольшая задержка для избежания throttling
-                await new Promise(resolve => setTimeout(resolve, 100));
-            } catch (error) {
-                console.error(`Ошибка при создании worklog для дня ${day}:`, error);
-                alert(`Ошибка при создании worklog для дня ${day}: ${error.message}`);
-                hideProgress();
-                return;
-            }
+            return {day, success: true, data: []};
         }
 
-        processed++;
-        updateProgress(processed, sortedDays.length, `Обновлено дней: ${processed} из ${sortedDays.length}`);
-    }
+        // Создание нового worklog
+        const date = new Date(year, month - 1, day, 9, 0, 0);
+
+        try {
+            const createResponse = await fetch(`${window.jiraData.jiraUrl}/rest/api/2/issue/${task}/worklog`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({started: formatJiraDate(date), timeSpentSeconds: hours * 3600})
+            });
+
+            if (!createResponse.ok) {
+                const errorText = await createResponse.text();
+                throw new Error(`HTTP ${createResponse.status}: ${errorText}`);
+            }
+
+            const createdWorklog = await createResponse.json();
+            return {
+                day,
+                success: true,
+                data: [{id: createdWorklog.id, started: formatJiraDate(date), seconds: hours * 3600}]
+            };
+        } catch (error) {
+            console.error(`Ошибка при создании worklog для дня ${day}:`, error);
+            return {day, success: false, error: error.message};
+        }
+    });
+
+    // Ожидаем завершения всех операций и обновляем прогресс
+    let completed = 0;
+    const results = await Promise.allSettled(dayPromises.map(async (promise, index) => {
+        const result = await promise;
+        completed++;
+        updateProgress(completed, sortedDays.length, `Обновлено дней: ${completed} из ${sortedDays.length}`);
+        return result;
+    }));
+
+    // Обновляем localData на основе результатов
+    const errors = [];
+    results.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value.success) {
+            const {day, data} = result.value;
+            localData[task] ??= {};
+            localData[task][day] = data;
+        } else if (result.status === 'fulfilled' && !result.value.success) {
+            errors.push(`День ${result.value.day}: ${result.value.error}`);
+        } else {
+            errors.push(`День ${sortedDays[index]}: ${result.reason?.message || 'Неизвестная ошибка'}`);
+        }
+    });
 
     hideProgress();
+
+    if (errors.length > 0) {
+        alert(`Ошибки при обновлении worklogs:\n${errors.join('\n')}`);
+    }
+
     renderTable();
 }
 
