@@ -986,8 +986,6 @@ async function applyAutoFill() {
     
     if (errors.length > 0) {
         alert(`Ошибки при автоматическом списании:\n${errors.join('\n')}`);
-    } else {
-        alert(`Автоматическое списание завершено. Обработано дней: ${processed}`);
     }
     
     // Перезагружаем данные
