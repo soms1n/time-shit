@@ -5,15 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Shit 💩</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto'>
     <link rel="icon" href="icon.png" type="image/png">
 </head>
 <body>
 <header>
-    <a href="#" id="openSettings">Настройки</a>
+    <h1>Time Shit 💩</h1>
+    <a href="#" id="openSettings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Настройки
+    </a>
 </header>
 <main>
-    <h3>Time Shit 💩</h3>
+    <h3>Анализ времени</h3>
     <select id="monthSelector"></select>
 
     <div id="progressContainer" class="progress-container" style="display: none;">
@@ -25,7 +31,14 @@
 
     <div id="result"></div>
     <div id="total"></div>
-    <button id="export">Экспорт в CSV</button>
+    <button id="export">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Экспорт в CSV
+    </button>
 </main>
 <script src="index.js" defer></script>
 </body>

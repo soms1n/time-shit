@@ -7,7 +7,8 @@
     "storage",
     "identity",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "windows"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -17,6 +18,5 @@
   },
   "action": {
     "default_popup": ""
-  },
-  "options_page": "options.html"
+  }
 }

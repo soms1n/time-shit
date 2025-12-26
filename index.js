@@ -28,7 +28,12 @@ function initializeUI() {
     document
         .getElementById('openSettings')
         .addEventListener('click', () => {
-            chrome.runtime.openOptionsPage();
+            chrome.windows.create({
+                url: chrome.runtime.getURL('popup.html'),
+                type: 'popup',
+                width: 500,
+                height: 600
+            });
         });
     document
         .getElementById('export')
@@ -115,10 +120,77 @@ async function fetchIssues(year, month) {
 
     try {
         const response = await fetch(searchUrl, {credentials: 'include'});
+        
+        if (response.status === 401 || response.status === 403) {
+            showAuthRequiredMessage();
+            return null;
+        }
+        
+        if (!response.ok) {
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            let isAuthError = false;
+            
+            try {
+                const errorData = await response.text();
+                if (errorData) {
+                    const parsedError = JSON.parse(errorData);
+                    let errorText = '';
+                    
+                    if (parsedError.errorMessages && parsedError.errorMessages.length > 0) {
+                        errorText = parsedError.errorMessages.join('\n');
+                        errorMessage += '\n' + errorText;
+                    } else if (parsedError.message) {
+                        errorText = parsedError.message;
+                        errorMessage += '\n' + errorText;
+                    } else if (errorData.length < 500) {
+                        errorText = errorData;
+                        errorMessage += '\n' + errorText;
+                    }
+                    
+                    // Проверяем, является ли это ошибкой авторизации
+                    const authKeywords = [
+                        'анонимных пользователей',
+                        'anonymous',
+                        'не существует, или не отображается',
+                        'does not exist, or is not displayed',
+                        'worklogAuthor',
+                        'worklogDate',
+                        'authentication',
+                        'authorization',
+                        'unauthorized',
+                        'forbidden'
+                    ];
+                    
+                    const lowerErrorText = errorText.toLowerCase();
+                    isAuthError = authKeywords.some(keyword => lowerErrorText.includes(keyword.toLowerCase()));
+                }
+            } catch (parseError) {
+                // Игнорируем ошибки парсинга, используем базовое сообщение
+            }
+            
+            // Если это ошибка авторизации (400 с сообщением об анонимных пользователях), показываем сообщение об авторизации
+            if (response.status === 400 && isAuthError) {
+                showAuthRequiredMessage();
+                return null;
+            }
+            
+            throw new Error(errorMessage);
+        }
+        
         const data = await response.json();
+        
+        if (!data || !data.issues || !Array.isArray(data.issues)) {
+            showAuthRequiredMessage();
+            return null;
+        }
+        
         return data.issues.map(issue => issue.key);
     } catch (exception) {
-        showError('Ошибка загрузки: ' + exception);
+        if (exception.message && (exception.message.includes('map') || exception.message.includes('Cannot read properties'))) {
+            showAuthRequiredMessage();
+        } else {
+            showError('Ошибка загрузки: ' + exception.message);
+        }
         return null;
     }
 }
@@ -167,9 +239,76 @@ async function fetchWorklogs(issueKey) {
 
     try {
         const response = await fetch(url, {credentials: 'include'});
-        return (await response.json()).worklogs;
+        
+        if (response.status === 401 || response.status === 403) {
+            showAuthRequiredMessage();
+            return null;
+        }
+        
+        if (!response.ok) {
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            let isAuthError = false;
+            
+            try {
+                const errorData = await response.text();
+                if (errorData) {
+                    const parsedError = JSON.parse(errorData);
+                    let errorText = '';
+                    
+                    if (parsedError.errorMessages && parsedError.errorMessages.length > 0) {
+                        errorText = parsedError.errorMessages.join('\n');
+                        errorMessage += '\n' + errorText;
+                    } else if (parsedError.message) {
+                        errorText = parsedError.message;
+                        errorMessage += '\n' + errorText;
+                    } else if (errorData.length < 500) {
+                        errorText = errorData;
+                        errorMessage += '\n' + errorText;
+                    }
+                    
+                    // Проверяем, является ли это ошибкой авторизации
+                    const authKeywords = [
+                        'анонимных пользователей',
+                        'anonymous',
+                        'не существует, или не отображается',
+                        'does not exist, or is not displayed',
+                        'worklogAuthor',
+                        'worklogDate',
+                        'authentication',
+                        'authorization',
+                        'unauthorized',
+                        'forbidden'
+                    ];
+                    
+                    const lowerErrorText = errorText.toLowerCase();
+                    isAuthError = authKeywords.some(keyword => lowerErrorText.includes(keyword.toLowerCase()));
+                }
+            } catch (parseError) {
+                // Игнорируем ошибки парсинга, используем базовое сообщение
+            }
+            
+            // Если это ошибка авторизации (400 с сообщением об анонимных пользователях), показываем сообщение об авторизации
+            if (response.status === 400 && isAuthError) {
+                showAuthRequiredMessage();
+                return null;
+            }
+            
+            throw new Error(errorMessage);
+        }
+        
+        const data = await response.json();
+        
+        if (!data || !data.worklogs) {
+            return [];
+        }
+        
+        return data.worklogs;
     } catch (exception) {
-        console.error(`Ошибка загрузки worklogs для ${issueKey}:`, exception);
+        if (exception.message && exception.message.includes('map')) {
+            showAuthRequiredMessage();
+        } else {
+            console.error(`Ошибка загрузки worklogs для ${issueKey}:`, exception);
+        }
         return null;
     }
 }
@@ -196,14 +335,14 @@ function renderTable() {
 
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month - 1, day);
-        html += `<th class="${getDayClass(date, day, today, totalsPerDay[day], norm)}">${date.toLocaleDateString('ru-RU', {weekday: 'short'})}</th>`;
+        html += `<th>${date.toLocaleDateString('ru-RU', {weekday: 'short'})}</th>`;
     }
 
     html += '</tr><tr>';
 
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month - 1, day);
-        html += `<th class="${getDayClass(date, day, today, totalsPerDay[day], norm)}">${day}</th>`;
+        html += `<th>${day}</th>`;
     }
 
     html += '</tr></thead><tbody>';
@@ -238,6 +377,15 @@ function renderTable() {
 }
 
 // === Selection Logic ===
+function clearSelection() {
+    document.querySelectorAll(".selected").forEach(cell => {
+        cell.classList.remove("selected");
+    });
+    selectedTask = null;
+    selectedDays.clear();
+    isSelecting = false;
+}
+
 function enableSelection() {
     document.querySelectorAll("td[data-task]").forEach(cell => {
         cell.addEventListener("mousedown", (event) => {
@@ -295,6 +443,19 @@ function enableSelection() {
         });
     });
 
+    document.addEventListener("mousedown", (event) => {
+        if (event.button !== 0) {
+            return;
+        }
+
+        const target = event.target;
+        const isCell = target.closest("td[data-task]");
+
+        if (!isCell) {
+            clearSelection();
+        }
+    });
+
     document.addEventListener("mouseup", () => {
         isSelecting = false;
     });
@@ -304,12 +465,14 @@ function enableSelection() {
 async function openPopup(task, days) {
     const hoursInput = prompt("Сколько часов поставить?", "8");
     if (hoursInput === null) {
+        clearSelection();
         return;
     }
 
     const hours = parseFloat(hoursInput.trim());
     if (isNaN(hours) || hours < 0) {
         alert("Некорректное значение");
+        clearSelection();
         return;
     }
 
@@ -333,11 +496,17 @@ async function openPopup(task, days) {
             `В выбранном диапазоне есть выходные дни (${weekendDatesFormatted}).\n\nПропустить выходные и не заполнять в них время?`
         );
 
+        if (!skipWeekends) {
+            clearSelection();
+            return;
+        }
+
         if (skipWeekends) {
             sortedDays = sortedDays.filter(day => !weekendDays.includes(day));
 
             if (sortedDays.length === 0) {
                 alert("После исключения выходных не осталось дней для заполнения.");
+                clearSelection();
                 return;
             }
         }
@@ -489,7 +658,34 @@ function getSummaryClass(date, day, today, total, norm) {
 }
 
 function showError(message) {
-    document.getElementById('result').innerText = message;
+    const resultElement = document.getElementById('result');
+    // Заменяем переносы строк на <br> для HTML отображения
+    const htmlMessage = message.replace(/\n/g, '<br>');
+    resultElement.innerHTML = `<div class="error-message">${htmlMessage}</div>`;
+}
+
+function showAuthRequiredMessage() {
+    const jiraUrl = window.jiraData?.jiraUrl;
+    let linkHtml = '';
+    
+    if (jiraUrl) {
+        linkHtml = `<a href="${jiraUrl}" target="_blank" class="auth-link">Перейти в Jira для авторизации</a>`;
+    } else {
+        linkHtml = '<p class="auth-hint">Укажите URL Jira в настройках расширения.</p>';
+    }
+    
+    const messageHtml = `
+        <div class="auth-message">
+            <div class="auth-message-content">
+                <h3>⚠️ Требуется авторизация</h3>
+                <p>Вы не авторизованы в Jira. Пожалуйста, авторизуйтесь для использования расширения.</p>
+                ${linkHtml}
+                <p class="auth-hint">После авторизации обновите страницу.</p>
+            </div>
+        </div>
+    `;
+    document.getElementById('result').innerHTML = messageHtml;
+    hideProgress();
 }
 
 function exportToCSV() {

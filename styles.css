@@ -21,107 +21,578 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+/* Windows 98 Color Palette */
+:root {
+    --win98-bg: #C0C0C0;
+    --win98-light: #FFFFFF;
+    --win98-dark: #808080;
+    --win98-darker: #000000;
+    --win98-blue: #000080;
+    --win98-text: #000000;
+    --win98-highlight: #316AC5;
+    --win98-green: #00FF00;
+    --win98-yellow: #FFFF00;
+    --win98-orange: #FF8000;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    font-family: 'Roboto', serif;
+    font-family: 'MS Sans Serif', 'Arial', 'Tahoma', sans-serif;
+    background: #008080;
+    background-image: 
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    color: var(--win98-text);
+    min-height: 100vh;
+    padding: 8px;
+    line-height: 1.4;
+    font-size: 11px;
+}
+
+header {
+    background: var(--win98-bg);
+    border: 2px outset var(--win98-bg);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
     font-size: 16px;
-    background-color: #f6f6f6;
-    margin: 10px;
+    font-weight: bold;
+    color: var(--win98-text);
+    margin: 0;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+}
+
+header a {
+    color: var(--win98-text);
+    text-decoration: none;
+    font-weight: normal;
+    padding: 4px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-top: 2px solid var(--win98-light);
+    border-left: 2px solid var(--win98-light);
+    border-right: 2px solid var(--win98-dark);
+    border-bottom: 2px solid var(--win98-dark);
+    background: var(--win98-bg);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+}
+
+header a:active {
+    border-top: 2px solid var(--win98-dark);
+    border-left: 2px solid var(--win98-dark);
+    border-right: 2px solid var(--win98-light);
+    border-bottom: 2px solid var(--win98-light);
+    background: var(--win98-bg);
+}
+
+header a:hover {
+    background: var(--win98-bg);
+}
+
+main {
+    background: var(--win98-bg);
+    border: 2px inset var(--win98-bg);
+    padding: 12px;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+h3 {
+    margin: 0 0 12px 0;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--win98-text);
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+}
+
+h3::before {
+    content: '';
+    width: 0;
+    height: 0;
+    background: none;
+    border-radius: 0;
+}
+
+select {
+    width: 100%;
+    max-width: 300px;
+    padding: 4px;
+    border: 2px inset var(--win98-bg);
+    background: var(--win98-light);
+    color: var(--win98-text);
+    font-size: 11px;
+    font-weight: normal;
+    cursor: pointer;
+    margin-bottom: 12px;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23000000' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 4px center;
+    padding-right: 24px;
+}
+
+select:focus {
+    outline: 1px dotted var(--win98-text);
+}
+
+button {
+    background: var(--win98-bg);
+    border-top: 2px solid var(--win98-light);
+    border-left: 2px solid var(--win98-light);
+    border-right: 2px solid var(--win98-dark);
+    border-bottom: 2px solid var(--win98-dark);
+    color: var(--win98-text);
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: normal;
+    cursor: pointer;
+    margin-top: 12px;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+button:hover {
+    background: var(--win98-bg);
+}
+
+button:active {
+    border-top: 2px solid var(--win98-dark);
+    border-left: 2px solid var(--win98-dark);
+    border-right: 2px solid var(--win98-light);
+    border-bottom: 2px solid var(--win98-light);
+    background: var(--win98-bg);
+}
+
+button#export {
+    background: var(--win98-bg);
+    border-top: 2px solid var(--win98-light);
+    border-left: 2px solid var(--win98-light);
+    border-right: 2px solid var(--win98-dark);
+    border-bottom: 2px solid var(--win98-dark);
+    color: var(--win98-text);
+}
+
+button#export:hover {
+    background: var(--win98-bg);
+}
+
+button#export:active {
+    border-top: 2px solid var(--win98-dark);
+    border-left: 2px solid var(--win98-dark);
+    border-right: 2px solid var(--win98-light);
+    border-bottom: 2px solid var(--win98-light);
+}
+
+#total {
+    margin-top: 12px;
+    padding: 8px;
+    background: var(--win98-light);
+    border: 2px inset var(--win98-bg);
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--win98-text);
+    text-align: center;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
 }
 
 table {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     width: 100%;
+    background: var(--win98-light);
+    border: 2px inset var(--win98-bg);
 }
 
-th, td {
-    border: 1px solid #ccc;
-    padding: 4px;
+thead {
+    background: #D4D4D4;
+    color: var(--win98-text);
+}
+
+th {
+    padding: 6px 8px;
     text-align: center;
+    font-weight: bold;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid var(--win98-dark);
+    border-top: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    color: var(--win98-text);
+    background: #D4D4D4;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+}
+
+thead tr:first-child th:first-child {
+    text-align: left;
+    padding-left: 12px;
+    position: sticky;
+    left: 0;
+    z-index: 11;
+    background: #D4D4D4;
+    color: var(--win98-text);
+    border-right: 2px solid var(--win98-dark);
+}
+
+td {
+    padding: 6px 8px;
+    text-align: center;
+    border: 1px solid var(--win98-dark);
+    background: var(--win98-light);
+    cursor: pointer;
+    color: var(--win98-text);
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+td:first-child {
+    text-align: left;
+    padding-left: 12px;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: var(--win98-light);
+    font-weight: bold;
+    border-right: 2px solid var(--win98-dark);
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+tbody tr:hover td {
+    background: #E0E0E0;
+}
+
+tbody tr:hover td:first-child {
+    background: #E0E0E0;
 }
 
 .weekend {
-    background-color: #fff7dd;
-}
-
-th.weekend {
-    background-color: #fff7dd;
+    background: var(--win98-yellow) !important;
+    border-left: 2px solid var(--win98-dark);
 }
 
 .over {
-    background-color: #ccffcc;
+    background: var(--win98-green) !important;
+    border-left: 2px solid var(--win98-dark);
 }
 
 .over-orange {
-    background-color: #ffd699;
+    background: var(--win98-orange) !important;
+    border-left: 2px solid var(--win98-dark);
 }
 
 .selected {
-    outline: 2px solid red;
+    outline: 2px solid var(--win98-blue);
+    outline-offset: -2px;
+    background: #C0D0FF !important;
+    z-index: 1;
+    position: relative;
 }
 
 .today {
-    background-color: #cceeff;
-}
-
-.test {
-    background-color: #cceeff;
+    background: #ADD8E6 !important;
+    font-weight: bold;
+    border-left: 2px solid var(--win98-blue);
 }
 
 .progress-container {
-    margin: 20px 0;
+    margin: 12px 0;
+    padding: 12px;
+    background: var(--win98-light);
+    border: 2px inset var(--win98-bg);
     text-align: center;
 }
 
 .progress-bar {
     width: 100%;
     height: 20px;
-    background-color: #e0e0e0;
-    border-radius: 10px;
+    background: var(--win98-light);
+    border: 2px inset var(--win98-bg);
     overflow: hidden;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .progress-fill {
     height: 100%;
-    background-color: #4CAF50;
+    background: var(--win98-green);
     width: 0%;
-    transition: width 0.3s ease;
-    background-image: linear-gradient(
-            45deg,
-            rgba(255, 255, 255, 0.15) 25%,
-            transparent 25%,
-            transparent 50%,
-            rgba(255, 255, 255, 0.15) 50%,
-            rgba(255, 255, 255, 0.15) 75%,
-            transparent 75%,
-            transparent
-    );
-    background-size: 1rem 1rem;
-    animation: progress-animation 1s linear infinite;
-}
-
-@keyframes progress-animation {
-    0% {
-        background-position: 0 0;
-    }
-    100% {
-        background-position: 1rem 1rem;
-    }
+    transition: width 0.3s linear;
+    border-right: 1px solid var(--win98-dark);
 }
 
 .progress-text {
-    color: #666;
-    font-size: 14px;
+    color: var(--win98-text);
+    font-size: 11px;
+    font-weight: normal;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
 }
 
-/* Стили для ссылок на задачи */
 table td a {
-    color: #0052CC;
-    text-decoration: none;
-    font-weight: bold;
+    color: var(--win98-blue);
+    text-decoration: underline;
+    font-weight: normal;
+    padding: 0;
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
 }
 
 table td a:hover {
-    color: #0065FF;
-    text-decoration: underline;
+    color: var(--win98-highlight);
+    background: transparent;
+    transform: none;
+}
+
+table td a:visited {
+    color: #800080;
+}
+
+#result {
+    margin-top: 12px;
+    overflow-x: auto;
+}
+
+#result::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+}
+
+#result::-webkit-scrollbar-track {
+    background: var(--win98-bg);
+    border: 2px inset var(--win98-bg);
+}
+
+#result::-webkit-scrollbar-thumb {
+    background: var(--win98-bg);
+    border: 2px outset var(--win98-bg);
+}
+
+#result::-webkit-scrollbar-thumb:hover {
+    background: var(--win98-bg);
+}
+
+#result::-webkit-scrollbar-button {
+    background: var(--win98-bg);
+    border: 2px outset var(--win98-bg);
+    width: 16px;
+    height: 16px;
+}
+
+#result::-webkit-scrollbar-button:active {
+    border: 2px inset var(--win98-bg);
+}
+
+/* Стили для страницы настроек */
+.settings-container {
+    max-width: 600px;
+    margin: 20px auto;
+    background: var(--win98-bg);
+    border: 2px inset var(--win98-bg);
+    padding: 16px;
+}
+
+.settings-container h2 {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--win98-text);
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+}
+
+.settings-container h2::before {
+    content: '';
+    width: 0;
+    height: 0;
+    background: none;
+    border-radius: 0;
+}
+
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: normal;
+    color: var(--win98-text);
+    font-size: 11px;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 4px;
+    border: 2px inset var(--win98-bg);
+    background: var(--win98-light);
+    color: var(--win98-text);
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+}
+
+.form-group input:focus {
+    outline: 1px dotted var(--win98-text);
+}
+
+.form-group input:hover {
+    background: var(--win98-light);
+}
+
+#status {
+    margin-top: 12px;
+    padding: 8px;
+    background: var(--win98-green);
+    color: var(--win98-text);
+    border: 2px inset var(--win98-bg);
+    font-weight: bold;
+    text-align: center;
+    display: none;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+}
+
+#status.show {
+    display: block;
+}
+
+.settings-container button {
+    background: var(--win98-bg);
+    border-top: 2px solid var(--win98-light);
+    border-left: 2px solid var(--win98-light);
+    border-right: 2px solid var(--win98-dark);
+    border-bottom: 2px solid var(--win98-dark);
+    width: 100%;
+    color: var(--win98-text);
+}
+
+.settings-container button:active {
+    border-top: 2px solid var(--win98-dark);
+    border-left: 2px solid var(--win98-dark);
+    border-right: 2px solid var(--win98-light);
+    border-bottom: 2px solid var(--win98-light);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    body {
+        padding: 4px;
+    }
+
+    main {
+        padding: 8px;
+    }
+
+    h3 {
+        font-size: 11px;
+    }
+
+    table {
+        font-size: 10px;
+    }
+
+    th, td {
+        padding: 4px;
+    }
+}
+
+/* Стили для сообщения об авторизации */
+.auth-message {
+    margin-top: 12px;
+    padding: 16px;
+    background: var(--win98-light);
+    border: 2px inset var(--win98-bg);
+    text-align: center;
+}
+
+.auth-message-content {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.auth-message-content h3 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--win98-text);
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+}
+
+.auth-message-content p {
+    margin: 8px 0;
+    font-size: 11px;
+    color: var(--win98-text);
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    line-height: 1.5;
+}
+
+.auth-link {
+    display: inline-block;
+    margin: 12px 0;
+    padding: 8px 16px;
+    background: var(--win98-bg);
+    border-top: 2px solid var(--win98-light);
+    border-left: 2px solid var(--win98-light);
+    border-right: 2px solid var(--win98-dark);
+    border-bottom: 2px solid var(--win98-dark);
+    color: var(--win98-blue);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: bold;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    cursor: pointer;
+}
+
+.auth-link:hover {
+    background: var(--win98-bg);
+    color: var(--win98-highlight);
+}
+
+.auth-link:active {
+    border-top: 2px solid var(--win98-dark);
+    border-left: 2px solid var(--win98-dark);
+    border-right: 2px solid var(--win98-light);
+    border-bottom: 2px solid var(--win98-light);
+}
+
+.auth-hint {
+    margin-top: 12px;
+    font-size: 10px;
+    color: var(--win98-dark);
+    font-style: italic;
+}
+
+/* Стили для сообщения об ошибке */
+.error-message {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--win98-light);
+    border: 2px inset var(--win98-bg);
+    color: var(--win98-text);
+    font-size: 11px;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    line-height: 1.5;
+    white-space: pre-wrap;
 }
